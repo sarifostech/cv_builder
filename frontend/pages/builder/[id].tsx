@@ -35,11 +35,12 @@ export default function BuilderPage({ params }: { params: { id: string } }) {
   const autoSave = async (newTitle?: string) => {
     if (!cv) return;
     try {
-      await api.put(`/cvs/${cv.id}`, {
-        title: newTitle ?? title,
-        templateId: cv.templateId,
-        content: cv.content,
-      });
+      const payload: any = {};
+      if (newTitle !== undefined) payload.title = newTitle;
+      if (cv.content) payload.content = cv.content;
+      if (cv.version !== undefined) payload.version = cv.version;
+      const res = await api.post(`/cvs/${cv.id}/autosave`, payload);
+      setCv(res.data);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
