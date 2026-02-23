@@ -1,23 +1,26 @@
 # Ignore everything by default
 /*
 
-# But include these:
-!/.gitignore
+# Keep git infrastructure
+!.git
+!.gitignore
+
+# Project directories
 !/backend/
 !/frontend/
 !/docs/
-!/*.md
 
-# Within backend/frontend, ignore usual dev artifacts (we'll add more as needed)
+# Within backend/frontend, ignore common dev artifacts
 /backend/node_modules/
 /backend/.env
-/backend/dist/
-/backend/.env.local
+/backend/dist
 /frontend/node_modules/
 /frontend/.env.local
 /frontend/.next/
 /frontend/out/
 
-# Keep .git and .gitignore itself
-!.git
-!.gitignore
+# Only track markdown files inside docs/
+!/docs/**/*.md
+
+# Optionally allow a root README if added later
+!README.md

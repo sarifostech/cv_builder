@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthContext, useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
@@ -11,6 +11,7 @@ interface Cv {
   title: string;
   templateId: string;
   content: any;
+  version?: number;
 }
 
 export default function BuilderPage({ params }: { params: { id: string } }) {
@@ -32,7 +33,7 @@ export default function BuilderPage({ params }: { params: { id: string } }) {
     }).catch(() => router.push('/dashboard'));
   }, [user, params.id, router]);
 
-  const autoSave = async (newTitle?: string) => {
+  const autoSave = useCallback(async (newTitle?: string) => {
     if (!cv) return;
     try {
       const payload: any = {};
@@ -46,7 +47,7 @@ export default function BuilderPage({ params }: { params: { id: string } }) {
     } catch (err) {
       console.error('Save failed', err);
     }
-  };
+  }, [cv]);
 
   useEffect(() => {
     if (!cv) return;
@@ -54,7 +55,7 @@ export default function BuilderPage({ params }: { params: { id: string } }) {
       autoSave();
     }, 2000);
     return () => clearTimeout(timer);
-  }, [cv?.content]);
+  }, [cv?.content, autoSave]);
 
   const updateContent = (updater: any) => {
     setCv(cv => ({ ...cv!, content: updater(cv?.content) }));
