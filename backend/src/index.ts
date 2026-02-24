@@ -7,6 +7,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 import dotenv from 'dotenv';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { Request, Response, NextFunction } from 'express';
+import { generatePdf } from './pdf/generator';
 
 dotenv.config();
 
@@ -71,7 +72,7 @@ app.post('/api/auth/register', rateLimitMiddleware, async (req: Request, res: Re
     data: { email, passwordHash: hash, name },
   });
   const token = generateToken(user.id);
-  res.status(201).json({ user: { id: user.id, email: user.email, name: user.name }, token });
+  res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
 });
 
 app.post('/api/auth/login', rateLimitMiddleware, async (req: Request, res: Response, next: NextFunction) => {
@@ -88,23 +89,22 @@ app.post('/api/auth/login', rateLimitMiddleware, async (req: Request, res: Respo
     return res.status(401).json({ error: 'Invalid email or password' });
   }
   const token = generateToken(user.id);
-  res.json({ user: { id: user.id, email: user.email, name: user.name }, token });
+  res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
 });
 
 app.post('/api/auth/logout', (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({ message: 'Logged out' });
 });
 
-app.get('/api/cvs', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  const authReq = req as AuthRequest;
+app.get('/api/cvs', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   const cvs = await prisma.cv.findMany({
-    where: { userId: authReq.userId },
+    where: { userId: req.userId },
     orderBy: { updatedAt: Prisma.SortOrder.desc },
   });
   res.json(cvs);
 });
 
-app.post('/api/cvs', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+app.post('/api/cvs', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authReq = req as AuthRequest;
   const { title, templateId, content } = req.body;
   if (!title) {
@@ -121,7 +121,7 @@ app.post('/api/cvs', requireAuth, async (req: Request, res: Response, next: Next
   res.status(201).json(cv);
 });
 
-app.get('/api/cvs/:id', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+app.get('/api/cvs/:id', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authReq = req as AuthRequest;
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id! } });
   if (!cv || cv.userId !== authReq.userId) {
@@ -130,7 +130,7 @@ app.get('/api/cvs/:id', requireAuth, async (req: Request, res: Response, next: N
   res.json(cv);
 });
 
-app.put('/api/cvs/:id', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+app.put('/api/cvs/:id', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authReq = req as AuthRequest;
   const { title, templateId, content } = req.body;
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id! } });
@@ -149,7 +149,7 @@ app.put('/api/cvs/:id', requireAuth, async (req: Request, res: Response, next: N
   res.json(updated);
 });
 
-app.delete('/api/cvs/:id', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+app.delete('/api/cvs/:id', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authReq = req as AuthRequest;
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id! } });
   if (!cv || cv.userId !== authReq.userId) {
@@ -159,7 +159,7 @@ app.delete('/api/cvs/:id', requireAuth, async (req: Request, res: Response, next
   res.status(204).send();
 });
 
-app.post('/api/cvs/:id/autosave', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+app.post('/api/cvs/:id/autosave', requireAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authReq = req as AuthRequest;
   const { content, version, title } = req.body;
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id! } });
@@ -181,6 +181,29 @@ app.post('/api/cvs/:id/autosave', requireAuth, async (req: Request, res: Respons
     data: updateData,
   });
   res.json(updated);
+});
+
+app.get('/api/cvs/:id/export-pdf', requireAuth, async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const mode = (req.query.mode as 'ats' | 'visual' | 'both') || 'ats';
+  const cv = await prisma.cv.findUnique({ where: { id: id! } });
+  if (!cv || cv.userId !== req.userId) {
+    return res.status(404).json({ error: 'CV not found' });
+  }
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (!user) return res.status(401).json({ error: 'User not found' });
+  if (mode !== 'ats' && user.role !== 'pro') {
+    return res.status(403).json({ error: 'Upgrade to Pro to export this format' });
+  }
+  try {
+    const pdfBuffer = generatePdf(cv, mode);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="cv-${cv.id}-${mode}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('PDF generation error:', err);
+    res.status(500).json({ error: 'PDF generation failed' });
+  }
 });
 
 // Start

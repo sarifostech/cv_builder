@@ -15,6 +15,7 @@ import SkillsForm from '../../components/forms/SkillsForm';
 import ProjectsForm from '../../components/forms/ProjectsForm';
 import PreviewPane from '../../components/PreviewPane';
 import Button from '../../components/Button';
+import ExportModal from '../../components/ExportModal';
 
 const TemplatePicker = dynamic(() => import('../../components/TemplatePicker'), { ssr: false });
 
@@ -32,7 +33,7 @@ const SECTION_LABELS: Record<SectionKey, string> = {
 export default function BuilderPage() {
   const router = useRouter();
   const { id } = router.query;
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [cvContent, setCvContent] = useState<CvContent>(createEmptyCvContent());
   const [title, setTitle] = useState('');
@@ -43,6 +44,7 @@ export default function BuilderPage() {
   const [previewMode, setPreviewMode] = useState<'ats' | 'visual'>('visual');
   const [error, setError] = useState<string | null>(null);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+const [showExportModal, setShowExportModal] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
