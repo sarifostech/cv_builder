@@ -1,5 +1,42 @@
 # Release Notes
 
+## Sprint 5 — Mobile Polish & Performance (2026-02-24)
+
+### New Features / Improvements
+- Fully responsive CV builder (mobile layout, touch-friendly controls, collapsed sidebar)
+- Accessibility enhancements (ARIA labels, focus management)
+- AI tips in-memory caching for faster responses
+- Backend performance optimizations (PDF generation, API latency)
+
+### Technical
+- Frontend: Responsive CSS, mobile navigation, AI Tips panel integration
+- Backend: In-memory cache for AI tips, minor tweaks
+
+### Migration Notes
+- None
+
+### Known Issues
+- None
+
+## Sprint 4 — AI Tips & Pricing (2026-02-24)
+
+### New Features
+- AI-driven tips in builder (action verbs, keywords, metrics) with one‑click insert
+- Pricing page with transparent plans ($12/mo or $99/yr, cancel anytime, 30‑day guarantee)
+- Pro upgrade flow (placeholder CTAs; Stripe not implemented yet)
+- UI differentiation for free/pro with existing role gating
+
+### Technical
+- Backend: `POST /api/ai/tips` returns static suggestion sets per section/industry
+- Frontend: `AITipsPanel` component, integrated into builder; Pricing page
+- No Stripe integration yet (deferred); pricing informational only
+
+### Migration Notes
+- `User.role` column added and applied; default 'free' for existing users.
+
+### Known Issues
+- None critical.
+
 ## Sprint 3 — PDF Export & Pricing (2026-02-24)
 
 ### New Features

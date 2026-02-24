@@ -403,6 +403,44 @@ const [showExportModal, setShowExportModal] = useState(false);
       {showAIPanel && (
         <AITipsPanel industry={industry} section={activeSection} onSelect={handleAISuggestion} />
       )}
+
+      {/* Mobile bottom navigation */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '60px',
+          background: 'white',
+          borderTop: '1px solid #e5e7eb',
+          display: 'flex',
+          overflowX: 'auto',
+          alignItems: 'center',
+          padding: '0 0.5rem',
+          gap: '0.5rem',
+          zIndex: 40,
+        }}>
+          {(Object.keys(SECTION_LABELS) as SectionKey[]).map((section) => (
+            <button
+              key={section}
+              onClick={() => setActiveSection(section)}
+              style={{
+                flexShrink: 0,
+                padding: '0.5rem',
+                fontSize: '0.75rem',
+                fontWeight: activeSection === section ? 600 : 400,
+                color: activeSection === section ? '#2563eb' : '#6b7280',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {SECTION_LABELS[section]}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
