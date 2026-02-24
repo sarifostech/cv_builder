@@ -267,25 +267,31 @@ const AI_TIPS: Record<string, Record<string, string[]>> = {
   }
 };
 
+// Simple in-memory cache for AI tips (key: industry|section)
+const tipsCache = new Map<string, { suggestions: string[]; ts: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 app.post('/api/ai/tips', requireAuth, async (req: Request, res: Response) => {
   const { industry, section, context } = req.body;
   if (!industry || !section) {
     return res.status(400).json({ error: 'Industry and section are required' });
   }
-  // Normalize
-  const industryKey = industry.toLowerCase();
-  const sectionKey = section.toLowerCase();
+  const key = `${industry.toLowerCase()}|${section.toLowerCase()}`;
+  const now = Date.now();
+  const cached = tipsCache.get(key);
+  if (cached && now - cached.ts < CACHE_TTL_MS) {
+    return res.json({ suggestions: cached.suggestions });
+  }
 
-  // For MVP, static tips based on section and some industry hints
-  const baseAction = AI_TIPS.action_verbs[sectionKey] || [];
-  const baseKeywords = AI_TIPS.keywords[sectionKey] || [];
-  const baseMetrics = AI_TIPS.metrics[sectionKey] || [];
+  // For MVP, static tips based on section
+  const baseAction = AI_TIPS.action_verbs[section.toLowerCase()] || [];
+  const baseKeywords = AI_TIPS.keywords[section.toLowerCase()] || [];
+  const baseMetrics = AI_TIPS.metrics[section.toLowerCase()] || [];
 
-  // Merge and dedupe suggestions, include base action verbs and keywords, and some metrics if relevant
   const all: string[] = [...baseAction, ...baseKeywords, ...baseMetrics];
-  // Return top 10 unique
   const unique = Array.from(new Set(all)).slice(0, 10);
 
+  tipsCache.set(key, { suggestions: unique, ts: now });
   res.json({ suggestions: unique });
 });
 
