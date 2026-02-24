@@ -208,7 +208,91 @@ app.get('/api/cvs/:id/export-pdf', requireAuth, async (req: Request, res: Respon
   }
 });
 
+// AI Tips endpoint
+const AI_TIPS: Record<string, Record<string, string[]>> = {
+  action_verbs: {
+    experience: [
+      'Spearheaded', 'Orchestrated', 'Championed', 'Pioneered', 'Revolutionized',
+      'Transformed', 'Streamlined', 'Modernized', 'Automated', 'Integrated'
+    ],
+    summary: [
+      'Results-driven', 'Detail-oriented', 'Innovative', 'Collaborative', 'Strategic',
+      'Proactive', 'Analytical', 'Creative', 'Dynamic', 'Motivated'
+    ],
+    skills: [
+      'Mastered', 'Proficient in', 'Skilled at', 'Experienced with', 'Competent in',
+      'Fluent in', 'Certified in', 'Trained in', 'Specialized in', 'Adept at'
+    ],
+    projects: [
+      'Developed', 'Built', 'Created', 'Designed', 'Engineered', 'Launched',
+      'Implemented', 'Optimized', 'Enhanced', 'Modernized'
+    ]
+  },
+  keywords: {
+    experience: [
+      'Project management', 'Cross-functional collaboration', 'Stakeholder engagement',
+      'Process improvement', 'Budget management', 'Team leadership', 'Client relations',
+      'Quality assurance', 'Risk management', 'Strategic planning'
+    ],
+    summary: [
+      'Results-oriented', 'Detail-focused', 'Innovative thinker', 'Collaborative team player',
+      'Strategic planner', 'Proactive problem solver', 'Analytical mindset', 'Creative approach',
+      'Dynamic professional', 'Motivated achiever'
+    ],
+    skills: [
+      'Technical proficiency', 'Software expertise', 'Programming languages', 'Design tools',
+      'Analytical tools', 'Communication platforms', 'Project management software',
+      'Data visualization', 'Cloud computing', 'Cybersecurity'
+    ],
+    projects: [
+      'Full-stack development', 'Mobile application design', 'Web development', 'API integration',
+      'Database management', 'UI/UX design', 'Cloud deployment', 'Agile methodology',
+      'DevOps practices', 'Quality assurance'
+    ]
+  },
+  metrics: {
+    experience: [
+      'Increased revenue by 25%', 'Reduced costs by 15%', 'Improved efficiency by 30%',
+      'Saved 100+ hours annually', 'Managed $500K budget', 'Led team of 15+ members',
+      'Achieved 95% customer satisfaction', 'Increased sales by 40%', 'Reduced processing time by 50%',
+      'Implemented system serving 10K+ users'
+    ],
+    projects: [
+      'Delivered project 2 weeks ahead of schedule', 'Achieved 99.9% uptime',
+      'Reduced page load time by 60%', 'Increased user engagement by 35%',
+      'Processed 1M+ transactions', 'Supported 50K+ concurrent users',
+      'Reduced error rate by 80%', 'Improved conversion rate by 25%',
+      'Generated $1M+ in revenue', 'Saved $200K in operational costs'
+    ]
+  }
+};
+
+app.post('/api/ai/tips', requireAuth, async (req: Request, res: Response) => {
+  const { industry, section, context } = req.body;
+  if (!industry || !section) {
+    return res.status(400).json({ error: 'Industry and section are required' });
+  }
+  // Normalize
+  const industryKey = industry.toLowerCase();
+  const sectionKey = section.toLowerCase();
+
+  // For MVP, static tips based on section and some industry hints
+  const baseAction = AI_TIPS.action_verbs[sectionKey] || [];
+  const baseKeywords = AI_TIPS.keywords[sectionKey] || [];
+  const baseMetrics = AI_TIPS.metrics[sectionKey] || [];
+
+  // Merge and dedupe suggestions, include base action verbs and keywords, and some metrics if relevant
+  const all: string[] = [...baseAction, ...baseKeywords, ...baseMetrics];
+  // Return top 10 unique
+  const unique = Array.from(new Set(all)).slice(0, 10);
+
+  res.json({ suggestions: unique });
+});
+
 // Start
+app.listen(PORT, () => {
+  console.log(`Backend running on http://localhost:${PORT}`);
+});
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
 });
