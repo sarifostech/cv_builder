@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import api from '@/lib/api';
-import Button from './Button';
-import Modal from './Modal';
+import Button from '@/components/Button';
+import Modal from '@/components/Modal';
 
 const templates = [
   { id: 'tech', name: 'Technology', industry: 'Tech' },
@@ -18,14 +18,18 @@ const templates = [
   { id: 'government', name: 'Government', industry: 'Government' },
 ];
 
-export default function TemplatePicker({ onCreated }: { onCreated: (cv: any) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
+interface TemplatePickerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreated: (cv: any) => void;
+}
 
+export default function TemplatePicker({ isOpen, onClose, onCreated }: TemplatePickerProps) {
   const handleSelect = async (templateId: string) => {
     try {
       const res = await api.post('/cvs', { title: `CV - ${new Date().toLocaleDateString()}`, templateId });
       onCreated(res.data);
-      setIsOpen(false);
+      onClose();
     } catch (err) {
       console.error('Failed to create CV', err);
       alert('Failed to create CV');
@@ -33,7 +37,7 @@ export default function TemplatePicker({ onCreated }: { onCreated: (cv: any) => 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+    <Modal isOpen={isOpen} onClose={onClose}>
       <h2>Choose a Template</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem' }}>
         {templates.map(t => (
@@ -43,7 +47,7 @@ export default function TemplatePicker({ onCreated }: { onCreated: (cv: any) => 
           </div>
         ))}
       </div>
-      <Button onClick={() => setIsOpen(false)} style={{ marginTop: '1rem' }}>Cancel</Button>
+      <Button onClick={onClose} style={{ marginTop: '1rem' }}>Cancel</Button>
     </Modal>
   );
 }
