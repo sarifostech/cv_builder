@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
+import { Request, Response, NextFunction } from 'express';
+import { AuthenticatedRequest } from './types/express';
 
 dotenv.config();
 
@@ -37,7 +39,7 @@ const generateToken = (userId: string) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 };
 
-const requireAuth = (req: any, res: any, next: any) => {
+const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing token' });
@@ -94,7 +96,7 @@ app.post('/api/auth/logout', (req, res) => {
 
 app.get('/api/cvs', requireAuth, async (req, res) => {
   const cvs = await prisma.cv.findMany({
-    where: { userId: req.userId },
+    where: { userId: req.userId! },
     orderBy: { updatedAt: 'desc' },
   });
   res.json(cvs);
@@ -107,7 +109,7 @@ app.post('/api/cvs', requireAuth, async (req, res) => {
   }
   const cv = await prisma.cv.create({
     data: {
-      userId: req.userId,
+      userId: req.userId!,
       title,
       templateId: templateId || 'default',
       content: content || {},
