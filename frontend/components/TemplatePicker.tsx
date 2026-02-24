@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import api from '@/lib/api';
 import Button from './Button';
+import Modal from './Modal';
 
 const templates = [
   { id: 'tech', name: 'Technology', industry: 'Tech' },

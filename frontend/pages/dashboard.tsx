@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContext, useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import TemplatePicker from '@/components/TemplatePicker';
 import Button from '@/components/Button';
@@ -56,7 +56,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-DashboardPage.getLayout = function PageLayout(page: React.ReactElement) {
-  return <AuthContext.Provider>{page}</AuthContext.Provider>;
-};

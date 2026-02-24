@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContext, useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import Button from '@/components/Button';
 
@@ -93,7 +93,3 @@ export default function BuilderPage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-BuilderPage.getLayout = function PageLayout(page: React.ReactElement) {
-  return <AuthContext.Provider>{page}</AuthContext.Provider>;
-};
