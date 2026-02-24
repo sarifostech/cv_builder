@@ -2,6 +2,7 @@ import Head from 'next/head';
 import type { AppProps } from 'next/app';
 import '@/styles/globals.css';
 import { AuthProvider } from '@/context/AuthContext';
+import Footer from '@/components/Footer';
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -15,6 +16,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <Component {...pageProps} />
       </AuthProvider>
+      <Footer />
     </>
   );
 }

@@ -6,9 +6,10 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'danger';
   className?: string;
   disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
 }
 
-export default function Button({ children, onClick, style, size = 'md', variant = 'primary', className, disabled = false }: ButtonProps) {
+export default function Button({ children, onClick, style, size = 'md', variant = 'primary', className, disabled = false, type }: ButtonProps) {
   const padding = size === 'sm' ? '0.25rem 0.75rem' : size === 'lg' ? '0.75rem 1.5rem' : '0.5rem 1rem';
   const bgColors: Record<string, { bg: string; color: string; border?: string }> = {
     primary: { bg: '#2563eb', color: 'white' },
@@ -26,7 +27,7 @@ export default function Button({ children, onClick, style, size = 'md', variant 
     ...style,
   };
   return (
-    <button onClick={onClick} disabled={disabled} style={btnStyle} className={className}>
+    <button type={type} onClick={onClick} disabled={disabled} style={btnStyle} className={className}>
       {children}
     </button>
   );
