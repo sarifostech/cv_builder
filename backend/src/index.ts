@@ -198,7 +198,7 @@ app.get('/api/cvs/:id/export-pdf', requireAuth, async (req: Request, res: Respon
     return res.status(403).json({ error: 'Upgrade to Pro to export this format' });
   }
   try {
-    const pdfBuffer = generatePdf(cv, mode);
+    const pdfBuffer = await generatePdf(cv, mode);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="cv-${cv.id}-${mode}.pdf"`);
     res.send(pdfBuffer);

@@ -1,5 +1,33 @@
 # Release Notes
 
+## Sprint 3 — PDF Export & Pricing (2026-02-24)
+
+### New Features
+- PDF export for CVs:
+  - ATS-Safe (plain text), Visual (styled), and Both (combined PDF)
+- Role-based gating:
+  - Free users: can export ATS-Safe only
+  - Pro users: can export all formats
+- Frontend Export Modal integrated into builder page with mode selection and upgrade prompts
+
+### Technical
+- Backend:
+  - New `generatePdf` service using `pdfkit`
+  - Route `GET /api/cvs/:id/export-pdf` with role checks
+  - Auth responses now include `user.role`
+  - Prisma schema adds `role` to `User` (default `free`)
+- Frontend:
+  - New `ExportModal` component, conditional UI based on role
+  - Type augmentation for `User.role` in `frontend/types/auth.d.ts`
+- Strict TypeScript builds (backend/frontend) pass
+
+### Migration Notes
+- Run `npx prisma generate` and `npx prisma migrate dev` to add `role` column.
+- Existing users: set role via DB seed or update manually.
+
+### Known Issues
+- None.
+
 ## Sprint 2 — Section Editing & Dual-Mode Preview (2026-02-24)
 
 ### New Features
