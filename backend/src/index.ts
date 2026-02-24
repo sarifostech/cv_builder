@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import dotenv from 'dotenv';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { Request, Response, NextFunction } from 'express';
@@ -38,7 +38,7 @@ const generateToken = (userId: string) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 };
 
-// Type for authenticated request (augmented)
+// Types
 type AuthRequest = Request & { userId: string };
 
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
@@ -99,7 +99,7 @@ app.get('/api/cvs', requireAuth, async (req: Request, res: Response, next: NextF
   const authReq = req as AuthRequest;
   const cvs = await prisma.cv.findMany({
     where: { userId: authReq.userId },
-    orderBy: { updatedAt: 'desc' },
+    orderBy: { updatedAt: Prisma.SortOrder.desc },
   });
   res.json(cvs);
 });
