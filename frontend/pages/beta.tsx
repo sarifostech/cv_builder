@@ -2,6 +2,8 @@ import { useState } from 'react';
 import Head from 'next/head';
 import Button from '@/components/Button';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 export default function Beta() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -11,7 +13,7 @@ export default function Beta() {
     e.preventDefault();
     setError(null);
     try {
-      const res = await fetch('/api/beta', {
+      const res = await fetch(`${API_BASE}/api/beta`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

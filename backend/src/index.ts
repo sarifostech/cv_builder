@@ -432,6 +432,26 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+// Beta invite endpoint
+app.post('/api/beta', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email || typeof email !== 'string' || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email required' });
+  }
+  const fs = require('fs');
+  const path = require('path');
+  const filePath = path.join(__dirname, '..', '..', 'beta_invites.txt'); // repo root
+  const timestamp = new Date().toISOString();
+  const line = `${timestamp} ${email}\n`;
+  try {
+    await fs.promises.appendFile(filePath, line, { encoding: 'utf8' });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Beta write error:', err);
+    res.status(500).json({ error: 'Failed to record invite' });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
   res.json({
