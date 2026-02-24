@@ -7,7 +7,6 @@ import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { Request, Response, NextFunction } from 'express';
-import { AuthenticatedRequest } from './types/express';
 
 dotenv.config();
 
@@ -25,7 +24,7 @@ const authRateLimiter = new RateLimiterMemory({
   points: 5,
   duration: 60,
 });
-const rateLimitMiddleware = async (req, res, next) => {
+const rateLimitMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await authRateLimiter.consume(req.ip);
     next();
@@ -39,7 +38,7 @@ const generateToken = (userId: string) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 };
 
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const requireAuth = (req: Request & { userId?: string }, res: Response, next: NextFunction) => {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing token' });
@@ -55,7 +54,7 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunctio
 };
 
 // Routes
-app.post('/api/auth/register', rateLimitMiddleware, async (req, res) => {
+app.post('/api/auth/register', rateLimitMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   const { email, password, name } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
@@ -72,7 +71,7 @@ app.post('/api/auth/register', rateLimitMiddleware, async (req, res) => {
   res.status(201).json({ user: { id: user.id, email: user.email, name: user.name }, token });
 });
 
-app.post('/api/auth/login', rateLimitMiddleware, async (req, res) => {
+app.post('/api/auth/login', rateLimitMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
@@ -89,27 +88,27 @@ app.post('/api/auth/login', rateLimitMiddleware, async (req, res) => {
   res.json({ user: { id: user.id, email: user.email, name: user.name }, token });
 });
 
-app.post('/api/auth/logout', (req, res) => {
+app.post('/api/auth/logout', (req: Request, res: Response, next: NextFunction) => {
   // Stateless: client discards token
   res.status(200).json({ message: 'Logged out' });
 });
 
-app.get('/api/cvs', requireAuth, async (req, res) => {
+app.get('/api/cvs', requireAuth, async (req: Request & { userId: string }, res: Response, next: NextFunction) => {
   const cvs = await prisma.cv.findMany({
-    where: { userId: req.userId! },
+    where: { userId: req.userId },
     orderBy: { updatedAt: 'desc' },
   });
   res.json(cvs);
 });
 
-app.post('/api/cvs', requireAuth, async (req, res) => {
+app.post('/api/cvs', requireAuth, async (req: Request & { userId: string }, res: Response, next: NextFunction) => {
   const { title, templateId, content } = req.body;
   if (!title) {
     return res.status(400).json({ error: 'Title required' });
   }
   const cv = await prisma.cv.create({
     data: {
-      userId: req.userId!,
+      userId: req.userId,
       title,
       templateId: templateId || 'default',
       content: content || {},
@@ -118,7 +117,7 @@ app.post('/api/cvs', requireAuth, async (req, res) => {
   res.status(201).json(cv);
 });
 
-app.get('/api/cvs/:id', requireAuth, async (req, res) => {
+app.get('/api/cvs/:id', requireAuth, async (req: Request & { userId: string }, res: Response, next: NextFunction) => {
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id } });
   if (!cv || cv.userId !== req.userId) {
     return res.status(404).json({ error: 'CV not found' });
@@ -126,7 +125,7 @@ app.get('/api/cvs/:id', requireAuth, async (req, res) => {
   res.json(cv);
 });
 
-app.put('/api/cvs/:id', requireAuth, async (req, res) => {
+app.put('/api/cvs/:id', requireAuth, async (req: Request & { userId: string }, res: Response, next: NextFunction) => {
   const { title, templateId, content } = req.body;
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id } });
   if (!cv || cv.userId !== req.userId) {
@@ -144,7 +143,7 @@ app.put('/api/cvs/:id', requireAuth, async (req, res) => {
   res.json(updated);
 });
 
-app.delete('/api/cvs/:id', requireAuth, async (req, res) => {
+app.delete('/api/cvs/:id', requireAuth, async (req: Request & { userId: string }, res: Response, next: NextFunction) => {
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id } });
   if (!cv || cv.userId !== req.userId) {
     return res.status(404).json({ error: 'CV not found' });
@@ -153,7 +152,7 @@ app.delete('/api/cvs/:id', requireAuth, async (req, res) => {
   res.status(204).send();
 });
 
-app.post('/api/cvs/:id/autosave', requireAuth, async (req, res) => {
+app.post('/api/cvs/:id/autosave', requireAuth, async (req: Request & { userId: string }, res: Response, next: NextFunction) => {
   const { content, version, title } = req.body;
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id } });
   if (!cv || cv.userId !== req.userId) {
