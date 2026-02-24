@@ -3,19 +3,20 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
-import { useAuth } from '../context/AuthContext';
-import api from '../lib/api';
-import { CvContent, createEmptyCvContent } from '../types/cv';
-import PersonalInfoForm from '../components/forms/PersonalInfoForm';
-import SummaryForm from '../components/forms/SummaryForm';
-import ExperienceForm from '../components/forms/ExperienceForm';
-import EducationForm from '../components/forms/EducationForm';
-import SkillsForm from '../components/forms/SkillsForm';
-import ProjectsForm from '../components/forms/ProjectsForm';
-import PreviewPane from '../components/PreviewPane';
-import Button from '../components/Button';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../lib/api';
+import { CvContent, createEmptyCvContent } from '@/types/cv';
+import type { ExperienceItem, EducationItem, ProjectsItem } from '@/types/cv';
+import PersonalInfoForm from '../../components/forms/PersonalInfoForm';
+import SummaryForm from '../../components/forms/SummaryForm';
+import ExperienceForm from '../../components/forms/ExperienceForm';
+import EducationForm from '../../components/forms/EducationForm';
+import SkillsForm from '../../components/forms/SkillsForm';
+import ProjectsForm from '../../components/forms/ProjectsForm';
+import PreviewPane from '../../components/PreviewPane';
+import Button from '../../components/Button';
 
-const TemplatePicker = dynamic(() => import('../components/TemplatePicker'), { ssr: false });
+const TemplatePicker = dynamic(() => import('../../components/TemplatePicker'), { ssr: false });
 
 type SectionKey = 'personalInfo' | 'summary' | 'experience' | 'education' | 'skills' | 'projects';
 
@@ -123,7 +124,7 @@ export default function BuilderPage() {
     section: K,
     data: Partial<CvContent[K]>
   ) => {
-    setCvContent(prev => ({
+    setCvContent((prev: CvContent) => ({
       ...prev,
       [section]: {
         ...prev[section],
@@ -363,6 +364,7 @@ export default function BuilderPage() {
         <TemplatePicker
           isOpen={showTemplatePicker}
           onClose={() => setShowTemplatePicker(false)}
+          onCreated={(cv) => router.push(`/builder/${cv.id}`)}
         />
       )}
     </div>

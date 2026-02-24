@@ -11,9 +11,11 @@ interface ProjectsItem {
 interface ProjectsFormProps {
   data: ProjectsItem[];
   onChange: (data: ProjectsItem[]) => void;
+  onAdd?: () => void;
+  onDeleteSection?: () => void;
 }
 
-export default function ProjectsForm({ data, onChange }: ProjectsFormProps) {
+export default function ProjectsForm({ data, onChange, onAdd, onDeleteSection }: ProjectsFormProps) {
   const addProject = () => {
     const newItem: ProjectsItem = { id: Date.now().toString(), name: '', description: '', link: '' };
     onChange([...data, newItem]);
@@ -29,10 +31,17 @@ export default function ProjectsForm({ data, onChange }: ProjectsFormProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <label style={{ fontWeight: 'bold' }}>Projects</label>
-        <Button size="sm" onClick={addProject}>Add Project</Button>
-      </div>
+      {(onDeleteSection || onAdd) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label style={{ fontWeight: 'bold' }}>Projects</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {onAdd && <Button size="sm" onClick={onAdd}>Add</Button>}
+            {onDeleteSection && <Button size="sm" variant="danger" onClick={onDeleteSection}>Delete Section</Button>}
+          </div>
+        </div>
+      )}
+      {!onAdd && !onDeleteSection && <label style={{ fontWeight: 'bold' }}>Projects</label>}
+      <Button size="sm" onClick={addProject} style={{ alignSelf: 'flex-end' }}>Add Project</Button>
       {data.map((project, idx) => (
         <div key={project.id} style={{ border: '1px solid #e5e7eb', padding: '1rem', borderRadius: '0.5rem', position: 'relative' }}>
           {data.length > 1 && (

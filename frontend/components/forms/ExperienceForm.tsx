@@ -5,9 +5,11 @@ import { ExperienceItem as ExpItem } from '@/types/cv';
 interface ExperienceFormProps {
   data: ExpItem[];
   onChange: (data: ExpItem[]) => void;
+  onAdd?: () => void;
+  onDeleteSection?: () => void;
 }
 
-export default function ExperienceForm({ data, onChange }: ExperienceFormProps) {
+export default function ExperienceForm({ data, onChange, onAdd, onDeleteSection }: ExperienceFormProps) {
   const addExperience = () => {
     const newItem: ExpItem = {
       id: Date.now().toString(),
@@ -30,10 +32,15 @@ export default function ExperienceForm({ data, onChange }: ExperienceFormProps) 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <label style={{ fontWeight: 'bold' }}>Work Experience</label>
-        <Button size="sm" onClick={addExperience}>Add Experience</Button>
-      </div>
+      {(onDeleteSection || onAdd) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label style={{ fontWeight: 'bold' }}>Work Experience</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {onAdd && <Button size="sm" onClick={onAdd}>Add</Button>}
+            {onDeleteSection && <Button size="sm" variant="danger" onClick={onDeleteSection}>Delete Section</Button>}
+          </div>
+        </div>
+      )}
       {data.map((exp) => (
         <div key={exp.id} style={{ border: '1px solid #e5e7eb', padding: '1rem', borderRadius: '0.5rem', position: 'relative' }}>
           {data.length > 1 && (

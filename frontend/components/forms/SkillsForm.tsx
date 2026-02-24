@@ -4,9 +4,11 @@ import Button from '../Button';
 interface SkillsFormProps {
   data: { items: string[] };
   onChange: (data: { items: string[] }) => void;
+  onAdd?: () => void;
+  onDeleteSection?: () => void;
 }
 
-export default function SkillsForm({ data, onChange }: SkillsFormProps) {
+export default function SkillsForm({ data, onChange, onAdd, onDeleteSection }: SkillsFormProps) {
   const [newSkill, setNewSkill] = useState('');
 
   const addSkill = () => {
@@ -23,7 +25,16 @@ export default function SkillsForm({ data, onChange }: SkillsFormProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <label style={{ fontWeight: 'bold' }}>Skills</label>
+      {(onDeleteSection || onAdd) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label style={{ fontWeight: 'bold' }}>Skills</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {onAdd && <Button size="sm" onClick={onAdd}>Add</Button>}
+            {onDeleteSection && <Button size="sm" variant="danger" onClick={onDeleteSection}>Delete Section</Button>}
+          </div>
+        </div>
+      )}
+      {!onAdd && !onDeleteSection && <label style={{ fontWeight: 'bold' }}>Skills</label>}
       <div style={{ display: 'flex', gap: '0.5rem' }}>
         <input
           type="text"

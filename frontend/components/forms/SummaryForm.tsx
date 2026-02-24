@@ -1,5 +1,4 @@
 import React from 'react';
-import Textarea from './Textarea'; // We'll create a simple Textarea or use Input
 
 interface SummaryFormProps {
   data: { text: string };

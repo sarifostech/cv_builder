@@ -5,9 +5,11 @@ import { EducationItem } from '@/types/cv';
 interface EducationFormProps {
   data: EducationItem[];
   onChange: (data: EducationItem[]) => void;
+  onAdd?: () => void;
+  onDeleteSection?: () => void;
 }
 
-export default function EducationForm({ data, onChange }: EducationFormProps) {
+export default function EducationForm({ data, onChange, onAdd, onDeleteSection }: EducationFormProps) {
   const addEducation = () => {
     const newItem: EducationItem = {
       id: Date.now().toString(),
@@ -30,10 +32,15 @@ export default function EducationForm({ data, onChange }: EducationFormProps) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <label style={{ fontWeight: 'bold' }}>Education</label>
-        <Button size="sm" onClick={addEducation}>Add Education</Button>
-      </div>
+      {(onDeleteSection || onAdd) && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <label style={{ fontWeight: 'bold' }}>Education</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            {onAdd && <Button size="sm" onClick={onAdd}>Add</Button>}
+            {onDeleteSection && <Button size="sm" variant="danger" onClick={onDeleteSection}>Delete Section</Button>}
+          </div>
+        </div>
+      )}
       {data.map((edu) => (
         <div key={edu.id} style={{ border: '1px solid #e5e7eb', padding: '1rem', borderRadius: '0.5rem', position: 'relative' }}>
           {data.length > 1 && (

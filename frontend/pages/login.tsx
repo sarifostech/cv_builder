@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContext, useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 
 export default function LoginPage() {
@@ -44,7 +44,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-LoginPage.getLayout = function PageLayout(page: React.ReactElement) {
-  return <AuthContext.Provider>{page}</AuthContext.Provider>;
-};
