@@ -46,3 +46,24 @@ export interface CvContent {
   skills: Skills;
   projects: ProjectsItem[];
 }
+
+export interface Cv {
+  id: string;
+  title: string;
+  templateId: string;
+  content: CvContent;
+  version?: number;
+  updatedAt?: string;
+}
+
+export function createEmptyCvContent(): CvContent {
+  return {
+    personalInfo: { fullName: '', email: '', phone: '', location: '' },
+    summary: { text: '' },
+    experience: [],
+    education: [],
+    skills: { items: [] },
+    projects: [],
+  };
+}
+
