@@ -11,9 +11,31 @@ import { generatePdf } from './pdf/generator';
 
 dotenv.config();
 
+// Optional monitoring dependencies (loaded dynamically if env vars set)
+let Sentry: any = null;
+let PostHogClient: any = null;
+
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
+
+// Initialize Sentry if DSN is set (dynamic import to avoid hard dependency)
+if (process.env.SENTRY_DSN) {
+  // @ts-ignore
+  Sentry = require('@sentry/node');
+  // @ts-ignore
+  const Tracing = require('@sentry/tracing');
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    integrations: [
+      new Sentry.Integrations.Http({ tracing: true }),
+      new Tracing.Integrations.Express({ app }),
+    ],
+    tracesSampleRate: 1.0,
+  });
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
@@ -119,6 +141,7 @@ app.post('/api/cvs', requireAuth, async (req: Request, res: Response, next: Next
       content: content || {},
     },
   });
+  res.locals.cv = cv; // Set CV for analytics tracking
   res.status(201).json(cv);
 });
 
@@ -280,6 +303,7 @@ app.post('/api/ai/tips', requireAuth, async (req: Request, res: Response) => {
   const now = Date.now();
   const cached = tipsCache.get(key);
   if (cached && now - cached.ts < CACHE_TTL_MS) {
+    res.locals.suggestions = cached.suggestions; // Set for analytics tracking
     return res.json({ suggestions: cached.suggestions });
   }
 
@@ -292,13 +316,137 @@ app.post('/api/ai/tips', requireAuth, async (req: Request, res: Response) => {
   const unique = Array.from(new Set(all)).slice(0, 10);
 
   tipsCache.set(key, { suggestions: unique, ts: now });
+  res.locals.suggestions = unique; // Set for analytics tracking
   res.json({ suggestions: unique });
 });
 
-// Start
-app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
+// Error handler middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error occurred:', err);
+  
+  // Capture error with Sentry if initialized
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(err, {
+      request: req,
+    });
+  }
+  
+  res.status(500).json({ error: 'Internal server error' });
 });
+
+// Sentry error handler (must be before app.listen)
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
+// Initialize PostHog if API key is set (optional dependency)
+let posthog: any = null;
+if (process.env.POSTHOG_API_KEY) {
+  // Dynamic require to avoid hard dependency in builds
+  // @ts-ignore
+  const Client = require('posthog-node').Client;
+  posthog = new Client({
+    apiKey: process.env.POSTHOG_API_KEY,
+    host: process.env.POSTHOG_HOST || 'https://app.posthog.com',
+  });
+}
+
+// Analytics middleware
+const analyticsMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  // Capture request start for timing
+  const start = Date.now();
+  
+  // Continue with request
+  next();
+  
+  // After response, capture analytics
+  const duration = Date.now() - start;
+  
+  // Track key events
+  if (posthog) {
+    try {
+      const authReq = req as AuthRequest;
+      const userId = authReq?.userId;
+      
+      // Track signup and login
+      if (req.path === '/api/auth/register' && req.method === 'POST' && res.statusCode === 201) {
+        posthog.capture('user_signed_up', { distinctId: userId, email: req.body.email });
+      }
+      
+      if (req.path === '/api/auth/login' && req.method === 'POST' && res.statusCode === 200) {
+        posthog.capture('user_logged_in', { distinctId: userId, email: req.body.email });
+      }
+      
+      // Track CV creation
+      if (req.path === '/api/cvs' && req.method === 'POST' && res.statusCode === 201) {
+        posthog.capture('cv_created', { distinctId: userId, cv_id: res.locals?.cv?.id });
+      }
+      
+      // Track PDF export
+      if (req.path.startsWith('/api/cvs/') && req.path.endsWith('/export-pdf') && req.method === 'GET' && res.statusCode === 200) {
+        posthog.capture('pdf_exported', { 
+          distinctId: userId, 
+          cv_id: req.params.id,
+          mode: req.query.mode || 'ats',
+          duration
+        });
+      }
+      
+      // Track AI tips usage
+      if (req.path === '/api/ai/tips' && req.method === 'POST' && res.statusCode === 200) {
+        posthog.capture('ai_tips_used', { 
+          distinctId: userId, 
+          industry: req.body.industry,
+          section: req.body.section,
+          suggestions_count: res.locals?.suggestions?.length || 0
+        });
+      }
+      
+      // Track general API usage
+      if (req.path.startsWith('/api/') && !req.path.includes('auth')) {
+        posthog.capture('api_called', { 
+          distinctId: userId, 
+          path: req.path,
+          method: req.method,
+          status_code: res.statusCode,
+          duration
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error capturing analytics:', error);
+    }
+  }
+};
+
+// Apply analytics middleware
+app.use(analyticsMiddleware);
+
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV || 'development',
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    env: process.env.NODE_ENV || 'development',
+    sentry: process.env.SENTRY_DSN ? 'enabled' : 'disabled',
+    posthog: process.env.POSTHOG_API_KEY ? 'enabled' : 'disabled',
+  });
+});
+
+// Start server
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
+  console.log('Sentry monitoring:', process.env.SENTRY_DSN ? 'ENABLED' : 'DISABLED');
+  console.log('PostHog analytics:', process.env.POSTHOG_API_KEY ? 'ENABLED' : 'DISABLED');
 });

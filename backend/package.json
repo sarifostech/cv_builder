@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "backup": "bash backup.sh"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
