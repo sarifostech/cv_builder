@@ -16,6 +16,7 @@ import ProjectsForm from '../../components/forms/ProjectsForm';
 import PreviewPane from '../../components/PreviewPane';
 import Button from '../../components/Button';
 import ExportModal from '../../components/ExportModal';
+import AITipsPanel from '@/components/AITipsPanel';
 
 const TemplatePicker = dynamic(() => import('../../components/TemplatePicker'), { ssr: false });
 
@@ -47,6 +48,21 @@ export default function BuilderPage() {
 const [showExportModal, setShowExportModal] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const activeInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const industry = 'technology'; // default; can be derived from user profile later
+
+  // Track focused input globally for AI suggestion insertion
+  useEffect(() => {
+    const handleFocus = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        activeInputRef.current = target as HTMLInputElement | HTMLTextAreaElement;
+      }
+    };
+    window.addEventListener('focus', handleFocus, true);
+    return () => window.removeEventListener('focus', handleFocus, true);
+  }, []);
 
   // Debounce timer ref
   const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -156,6 +172,20 @@ const [showExportModal, setShowExportModal] = useState(false);
     const newItem = { id: Date.now().toString(), name: '', description: '', link: '' };
     updateSection('projects', [...cvContent.projects, newItem] as any);
     setActiveSection('projects');
+  };
+
+  const handleAISuggestion = (suggestion: string) => {
+    const input = activeInputRef.current;
+    if (!input) {
+      alert('Please focus a text field first');
+      return;
+    }
+    const start = input.selectionStart ?? 0;
+    const end = input.selectionEnd ?? 0;
+    const newValue = input.value.slice(0, start) + suggestion + input.value.slice(end);
+    input.value = newValue;
+    input.selectionStart = input.selectionEnd = start + suggestion.length;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
   const deleteSection = (section: SectionKey) => {
@@ -289,6 +319,7 @@ const [showExportModal, setShowExportModal] = useState(false);
             {saving && <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Saving...</span>}
             {lastSaved && <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Last saved: {lastSaved}</span>}
             <Button variant="secondary" size="sm" onClick={() => setShowTemplatePicker(true)}>New from Template</Button>
+            <Button size="sm" variant="secondary" onClick={() => setShowAIPanel(o => !o)}>AI Tips</Button>
           </div>
         </div>
       </header>
@@ -368,6 +399,9 @@ const [showExportModal, setShowExportModal] = useState(false);
           onClose={() => setShowTemplatePicker(false)}
           onCreated={(cv) => router.push(`/builder/${cv.id}`)}
         />
+      )}
+      {showAIPanel && (
+        <AITipsPanel industry={industry} section={activeSection} onSelect={handleAISuggestion} />
       )}
     </div>
   );
