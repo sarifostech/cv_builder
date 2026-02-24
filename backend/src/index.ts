@@ -154,7 +154,7 @@ app.delete('/api/cvs/:id', requireAuth, async (req, res) => {
 });
 
 app.post('/api/cvs/:id/autosave', requireAuth, async (req, res) => {
-  const { content, version } = req.body;
+  const { content, version, title } = req.body;
   const cv = await prisma.cv.findUnique({ where: { id: req.params.id } });
   if (!cv || cv.userId !== req.userId) {
     return res.status(404).json({ error: 'CV not found' });
@@ -162,12 +162,16 @@ app.post('/api/cvs/:id/autosave', requireAuth, async (req, res) => {
   if (version !== undefined && version !== cv.version) {
     return res.status(409).json({ error: 'Version conflict', currentVersion: cv.version });
   }
+  const updateData: any = {
+    content: content ?? cv.content,
+    version: { increment: 1 },
+  };
+  if (title !== undefined) {
+    updateData.title = title;
+  }
   const updated = await prisma.cv.update({
     where: { id: req.params.id },
-    data: {
-      content: content ?? cv.content,
-      version: { increment: 1 },
-    },
+    data: updateData,
   });
   res.json(updated);
 });
