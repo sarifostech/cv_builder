@@ -9,6 +9,7 @@
 !/backend/
 !/frontend/
 !/docs/
+!/cypress/
 
 # Within backend/frontend, ignore common dev artifacts
 /backend/node_modules/

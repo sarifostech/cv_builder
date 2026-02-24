@@ -210,7 +210,7 @@ app.post('/api/cvs/:id/autosave', requireAuth, async (req: Request, res: Respons
 app.get('/api/cvs/:id/export-pdf', requireAuth, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   const { id } = req.params;
-  const mode = (req.query.mode as 'ats' | 'visual' | 'both') || 'ats';
+  const mode = (req.query.mode as string) || 'ats';
   const cv = await prisma.cv.findUnique({ where: { id: id! } });
   if (!cv || cv.userId !== authReq.userId) {
     return res.status(404).json({ error: 'CV not found' });
@@ -221,7 +221,7 @@ app.get('/api/cvs/:id/export-pdf', requireAuth, async (req: Request, res: Respon
     return res.status(403).json({ error: 'Upgrade to Pro to export this format' });
   }
   try {
-    const pdfBuffer = await generatePdf(cv, mode);
+    const pdfBuffer = await generatePdf(cv, mode as 'ats' | 'visual' | 'both');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="cv-${cv.id}-${mode}.pdf"`);
     res.send(pdfBuffer);
@@ -387,7 +387,7 @@ const analyticsMiddleware = async (req: Request, res: Response, next: NextFuncti
         posthog.capture('pdf_exported', { 
           distinctId: userId, 
           cv_id: req.params.id,
-          mode: req.query.mode || 'ats',
+          mode: req.query.mode as string || 'ats',
           duration
         });
       }
