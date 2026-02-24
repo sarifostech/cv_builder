@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
-import rateLimit from 'rate-limiter-flexible';
+import { RateLimiterMemory } from 'rate-limiter-flexible';
 
 dotenv.config();
 
@@ -19,7 +19,7 @@ app.use(helmet());
 app.use(express.json());
 
 // Rate limiter for auth
-const authRateLimiter = new rateLimit({
+const authRateLimiter = new RateLimiterMemory({
   points: 5,
   duration: 60,
 });
